@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">LifeSaved</string>
+    <string name="email_hint">Email:</string>
+    <string name="pass_hint">Password:</string>
+    <string name="login">Login</string>
+    <string name="signup">Create an account</string>
+    <string name="welcome">Welcome!</string>
+
+</resources>
