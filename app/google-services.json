@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "575722062270",
+    "firebase_url": "https://lifesaved2-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "lifesaved2",
+    "storage_bucket": "lifesaved2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:575722062270:android:ff384608c5a0070632f9ef",
+        "android_client_info": {
+          "package_name": "com.example.lifesaved"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "575722062270-fljpfn4jtm7is36snnjuug5j5a91k47q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqopz7g1bEmZWe_4jTiWF1dOOREAqq4WA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "575722062270-fljpfn4jtm7is36snnjuug5j5a91k47q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

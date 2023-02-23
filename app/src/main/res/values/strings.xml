@@ -4,6 +4,9 @@
     <string name="pass_hint">Password:</string>
     <string name="login">Login</string>
     <string name="signup">Create an account</string>
-    <string name="welcome">Welcome!</string>
+    <string name="welcome">Welcome</string>
+    <string name="hint_subject">Subject:</string>
+    <string name="confirm">Confirm</string>
+    <string name="add_image">+</string>
 
 </resources>
