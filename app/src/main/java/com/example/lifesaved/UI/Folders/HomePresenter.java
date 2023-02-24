@@ -54,7 +54,6 @@ public class HomePresenter implements Repository.FolderListener, Repository.Fold
     public void updateFolders(ArrayList<Folder> folderArrayList) {
 
 
-
         view.setDefaultFields(folderArrayList);
     }
 
@@ -63,7 +62,7 @@ public class HomePresenter implements Repository.FolderListener, Repository.Fold
     }
 
     @Override
-    public void updateImage(String txt) {
+    public void updateImageProgress(String txt) {
         //used to receive things from repository
         view.updateDisplay(txt);
     }

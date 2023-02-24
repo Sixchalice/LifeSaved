@@ -1,8 +1,11 @@
 package com.example.lifesaved.UI.Folders;
 
+import androidx.core.app.ActivityCompat;
+import android.Manifest;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -11,9 +14,12 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.icu.text.CaseMap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
@@ -34,11 +40,15 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.util.ArrayList;
 
 public class HomePageActivity extends AppCompatActivity implements OnItemClickListener {
 
+    private static final int REQUEST_WRITE_EXTERNAL_STORAGE = 2;
     public static final int GALLERY_REQUEST_CODE = 1;
 
     private static final String TAG = "FolderActivity";
@@ -121,21 +131,38 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
         addFromCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                startActivityForResult(takePicture, 0);
+                if (ContextCompat.checkSelfPermission(HomePageActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    // Permission is already granted, proceed with the operation.
+                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    startActivityForResult(intent, REQUEST_WRITE_EXTERNAL_STORAGE);
+                } else {
+                    // Permission is not granted, request it.
+                    ActivityCompat.requestPermissions(HomePageActivity.this,
+                            new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                            REQUEST_WRITE_EXTERNAL_STORAGE);
+                }
+
+
             }
         });
     }
-
-    protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) {
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent imageReturnedIntent) {
         super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
         Log.e(TAG, "onActivityResult: " + requestCode + " " + resultCode + " " + imageReturnedIntent);
         switch(requestCode) {
-            case 0:
+            case REQUEST_WRITE_EXTERNAL_STORAGE: //camera
                 if (resultCode == RESULT_OK) {
-                    Log.e(TAG, "onActivityResult: " + imageReturnedIntent.getData());
-                    Uri selectedImage = imageReturnedIntent.getData();
-                    /*  def a better way   */
+
+
+                    Bitmap bitmap = (Bitmap) imageReturnedIntent.getExtras().get("data");
+                    //convert bitmap to uri
+                    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+                    String path = MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "Title", null);
+                    Uri selectedImage = Uri.parse(path);
+
                     imageUri = selectedImage;
                     ImageView imageView = dialog.findViewById(R.id.imageView_dialog_addfolder_viewimage);
                     imageView.setImageURI(selectedImage);
@@ -164,13 +191,17 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
     public void onItemClick(int index) {
         Log.e(TAG, "clicked" + index);
         Intent intent = new Intent(this, ViewingActivity.class);
-        Folder f = folderArrayList.get(index);
+        Folder f1 = folderArrayList.get(index);
 
         //:TODO use gson to pass folder
-        Gson gson = new Gson();
-        String myJson = gson.toJson(f);
-
-        intent.putExtra("myjson", myJson);
+        GsonBuilder builder = new GsonBuilder();
+        builder.serializeNulls();
+        Gson gson = builder.create();
+        Uri temp = f1.getIcon();
+        f1.setIcon(null);
+        String json = gson.toJson(f1);
+        f1.setIcon(temp);
+        intent.putExtra("myjson", json);
 
         startActivity(intent);
     }
@@ -229,7 +260,7 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
 
     public void updateDisplay(String message) {
         //update the display
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, message + "%", Toast.LENGTH_SHORT).show();
         //progressDialog.dismiss();
     }
 

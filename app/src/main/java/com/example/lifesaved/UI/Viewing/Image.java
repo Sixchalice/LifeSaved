@@ -4,22 +4,22 @@ import android.net.Uri;
 
 public class Image {
 
-    Uri uri;
+    Uri imgUri;
 
     public Image(Uri uri) {
-        this.uri = uri;
+        this.imgUri = uri;
     }
 
     public Image() {
-        this.uri = null;
+        this.imgUri = null;
     }
 
     public void setImgUri(Uri uri) {
-        this.uri = uri;
+        this.imgUri = uri;
     }
 
     public Uri getImgUri() {
-        return this.uri;
+        return this.imgUri;
     }
 
 }

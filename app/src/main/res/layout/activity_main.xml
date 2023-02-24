@@ -6,6 +6,28 @@
     android:layout_height="match_parent"
     tools:context=".UI.Login.MainActivity">
 
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tab_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@+id/textInputLayout_login_email"
+        tools:layout_editor_absoluteX="16dp">
+
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tab_item_login"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/login"
+            />
+
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tab_item_signup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/signup" />
+
+    </com.google.android.material.tabs.TabLayout>
+
     <TextView
         android:id="@+id/textView_main_logintext"
         android:layout_width="172dp"
@@ -84,12 +106,14 @@
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="414dp"
+        android:layout_height="187dp"
         app:layout_constraintBottom_toTopOf="@+id/textInputLayout_login_email"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.666"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView_main_logintext"
+        app:layout_constraintVertical_bias="0.0"
         app:srcCompat="@drawable/logo" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

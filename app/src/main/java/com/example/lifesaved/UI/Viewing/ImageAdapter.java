@@ -1,5 +1,7 @@
 package com.example.lifesaved.UI.Viewing;
 
+import android.net.Uri;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,10 +26,10 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         this.listener = listener;
     }
 
+
     public ImageAdapter(ArrayList<Image> images) {
         this.images = images;
     }
-
 
     @NonNull
     @Override
@@ -38,9 +40,13 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
 
     @Override
     public void onBindViewHolder(@NonNull ImageAdapter.ImageViewHolder holder, int position) {
-
         Image currentImage = images.get(position);
-        holder.imageView.setImageResource(R.drawable.red_star);
+        Log.e("ImageAdapter", "onBindViewHolder: " + "I AM AT THE ADAPTER NOW" + currentImage.getImgUri());
+        Uri uri = currentImage.getImgUri();
+        if(uri != null)
+            holder.imageView.setImageURI(uri);
+        else //don't think it can even happen tho idk
+            holder.imageView.setImageResource(R.drawable.red_star);
 
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override

@@ -2,19 +2,13 @@ package com.example.lifesaved.persistence;
 
 import static android.content.ContentValues.TAG;
 
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.icu.text.CaseMap;
 import android.net.Uri;
-import android.provider.MediaStore;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 
 import com.example.lifesaved.UI.Folders.Folder;
-import com.example.lifesaved.UI.Folders.HomePageActivity;
 import com.example.lifesaved.UI.Viewing.Image;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -34,7 +28,6 @@ import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,7 +46,7 @@ public class Repository { // this class will be used to get data from firebase.
 
 
     public interface FolderImageListener {
-        void updateImage(String txt);
+        void updateImageProgress(String txt);
 
         void notifydatasetchanged();
     }
@@ -65,68 +58,128 @@ public class Repository { // this class will be used to get data from firebase.
 
     public interface MultipleImagesListener{
         void updateImages(ArrayList<Image> images);
+
+        void notifydatasetchanged();
+
+        void progress(String message);
     }
     private MultipleImagesListener multipleImagesListener;
     public void setMultipleImagesListener(MultipleImagesListener multipleImagesListener) {
         this.multipleImagesListener = multipleImagesListener;
     }
 
-    //:TODO add all the logic in Viewing-activity for these methods
-    public void uploadMultipleImages(Folder f1,Uri uri){
-        StorageReference storageRef = FirebaseStorage.getInstance().getReference();
-        StorageReference storageImg = storageRef.child("folders/"+f1.getFid()+"/"+ f1.getAmntOfImages() +".jpg");
-        if(uri == null){
-            Log.e(TAG, "UploadNormalImages: " + "uri is null");
-            return;
-        }
-        storageImg.putFile(uri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+
+    public void setNumberOfImage(int number, String fid){
+
+        DatabaseReference myRef = FirebaseDatabase.getInstance().getReference("Folders/"+fid+"/amntOfImages");
+        myRef.setValue(number);
+
+        readAllImagesInFolder(new Folder("name", fid));
+    }
+    public void uploadTheImage(int number, String fid, Uri uri){
+        int newplace = number + 1;
+        StorageReference storageRef = FirebaseStorage.getInstance()
+                .getReference().child("folders/" + fid + "/" + newplace + ".jpg");
+        storageRef.putFile(uri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                f1.setAmntOfImages(f1.getAmntOfImages()+1);
-                //:TODO idk if i need to call an interface here
+//                Log.e(TAG, "LINE 84 onSuccess: added image to: # " + newplace);
+                setNumberOfImage(newplace, fid);
+
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Log.d(TAG, "onFailure: "+e.getMessage());
+
             }
         });
     }
 
-    public void readAllImagesInFolder(Folder f1) {
-        ArrayList<Image> images = new ArrayList<>();
-        StorageReference storageRef = FirebaseStorage.getInstance().getReference();
-        StorageReference storageImg = storageRef.child("folders/"+f1.getFid());
+    //:TODO add all the logic in Viewing-activity for these methods
+    public void uploadMultipleImages(Folder f1,Uri uri){
 
-        storageImg.listAll().addOnCompleteListener(new OnCompleteListener<ListResult>() {
+        Query myQuery = database.getReference("Folders/"+f1.getFid()+"/amntOfImages");
+        myQuery.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                int number = snapshot.getValue(Integer.class);
+                uploadTheImage(number, f1.getFid(), uri);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
+    }
+
+    public void readAllImagesInFolder(Folder f1) {
+        Log.e(TAG, "readAllImagesInFolder: " + f1.getFid());
+        ArrayList<Image> images = new ArrayList<>();
+
+
+        StorageReference storageRef = FirebaseStorage.getInstance()
+                .getReference().child("folders/" + f1.getFid());
+
+        storageRef.listAll().addOnCompleteListener(new OnCompleteListener<ListResult>() {
             @Override
             public void onComplete(@NonNull Task<ListResult> task) {
-                if(task.isSuccessful()){
-                    for(StorageReference ref : task.getResult().getItems()){
-                        if((ref.getName().equals("mainimg.jpg"))){
-                        }
-                        else {
-                            ref.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-                                @Override
-                                public void onSuccess(Uri uri) {
-                                    Image image = new Image(uri);
-                                    images.add(image);
-                                }
-                            });
-                        }
-                    }
+                if (task.isSuccessful()) {
+                    ListResult result = task.getResult();
+                    for (StorageReference ref : result.getItems()) {
+                        // All the items under listRef.
 
-                    multipleImagesListener.updateImages(images);
+                        ref.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                            @Override
+                            public void onSuccess(Uri uri) {
+                                try {
+                                    File localFile = File.createTempFile("images", "jpg");
+                                    final Uri fileUri = Uri.fromFile(localFile);
+                                    ref.getFile(localFile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                                        @Override
+                                        public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                                            // Local temp file has been created
+                                            Image image = new Image();
+                                            image.setImgUri(fileUri);
+                                            images.add(image);
+                                            multipleImagesListener.updateImages(images);
+                                            multipleImagesListener.notifydatasetchanged();
+                                        }
+                                    }).addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+//                                            Log.e(TAG, "LINE 149 onFailure: read all images from folder: " + e.getMessage());
+                                        }
+                                    }).addOnProgressListener(new OnProgressListener<FileDownloadTask.TaskSnapshot>() {
+                                        @Override
+                                        public void onProgress(@NonNull FileDownloadTask.TaskSnapshot taskSnapshot) {
+                                            double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
+                                            multipleImagesListener.progress("Downloading: " + (int) progress + "%");
+                                        }
+                                    });
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Log.e(TAG, "LINE 138 onFailure: read all images from folder: " + e.getMessage());
+                            }
+                        });
+
+                    }
+                    // Uh-oh, an error occurred!
                 }
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Log.d(TAG, "onFailure: "+e.getMessage());
+                Log.e(TAG, "LINE 147 onFailure: read all images from folder: " + e.getMessage());
             }
         });
     }
-
 
     public void updateUserids(String newUid, String folderName) {
         String uid = FirebaseAuth.getInstance().getUid();
@@ -178,7 +231,7 @@ public class Repository { // this class will be used to get data from firebase.
 
     //read all folders for user
     public void readfolderforUser() {
-        Log.e(TAG, "readfolderforUser: I AM IN THE READ FUNCTION NOW" );
+//        Log.e(TAG, "readfolderforUser: I AM IN THE READ FUNCTION NOW" );
 
         String uid = FirebaseAuth.getInstance().getUid();
         ArrayList<Folder> folderArrayList = new ArrayList<>();
@@ -191,7 +244,7 @@ public class Repository { // this class will be used to get data from firebase.
                 folderArrayList.clear();
 
                 for(DataSnapshot snap : snapshot.getChildren()){
-                    Log.e(TAG, "onDataChange: " + snap.toString());
+//                    Log.e(TAG, "onDataChange: " + snap.toString());
                     FolderDTO folderDTO = snap.getValue(FolderDTO.class);
                     Folder folder = folderDTO.toFolder();
                     folder.setFid(snap.getKey());
@@ -206,15 +259,15 @@ public class Repository { // this class will be used to get data from firebase.
                             public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
                                 // Local temp file has been created
                                 folder.setIcon(fileUri);
-                                Log.e(TAG, "onSuccess: " + "got image");
+//                                Log.e(TAG, "onSuccess: " + "got image");
                                 folderImageListener.notifydatasetchanged();
                             }
                         }).addOnFailureListener(new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
                                 // Handle any errors
-                                Log.e(TAG, "onFailure: " + "failed to get image");
-                                Log.e(TAG, "onFailure: " + e.getMessage());
+//                                Log.e(TAG, "onFailure: " + "failed to get image");
+//                                Log.e(TAG, "onFailure: " + e.getMessage());
                             }
                         });
 
@@ -236,40 +289,39 @@ public class Repository { // this class will be used to get data from firebase.
         });
     }
 
-
     public void UploadFolderImage(Uri uri, String folderId) {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
         StorageReference folderImg = storageRef.child("folders/" + folderId + "/mainimg.jpg");
         if(uri == null){
-            Log.e(TAG, "UploadFolderImage: " + "uri is null");
+//            Log.e(TAG, "UploadFolderImage: " + "uri is null");
             return;
         }
         folderImg.putFile(uri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 //dismiss progress dialog
-                Log.e(TAG, "onSuccess: " + "image uploaded");
+//                Log.e(TAG, "onSuccess: " + "image uploaded");
 
-                folderImageListener.updateImage("image uploaded");
+                folderImageListener.updateImageProgress("image uploaded");
                 readfolderforUser();
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
                 //dismiss progress dialog
-                Log.e(TAG, "onFailure: " + "image upload failed");
+//                Log.e(TAG, "onFailure: " + "image upload failed");
 
-                folderImageListener.updateImage("image upload failed");
+                folderImageListener.updateImageProgress("image upload failed");
             }
         }).addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onProgress(@NonNull UploadTask.TaskSnapshot snapshot) {
                 //show progress dialog
                 double progress = (100.0 * snapshot.getBytesTransferred() / snapshot.getTotalByteCount());
-                Log.e(TAG, "onProgress: " + progress);
+//                Log.e(TAG, "onProgress: " + progress);
                 //send to progress dialog
-                folderImageListener.updateImage(String.valueOf(progress));
+                folderImageListener.updateImageProgress(String.valueOf(progress));
             }
         });
     }

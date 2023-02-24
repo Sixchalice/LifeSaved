@@ -4,11 +4,16 @@ import static com.example.lifesaved.UI.Folders.HomePageActivity.GALLERY_REQUEST_
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.Manifest;
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -23,6 +28,7 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.lifesaved.UI.Folders.Folder;
 import com.example.lifesaved.UI.Folders.HomePageActivity;
@@ -36,9 +42,12 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 
 public class ViewingActivity extends AppCompatActivity implements OnItemClickListener {
+
+    private static final int REQUEST_WRITE_EXTERNAL_STORAGE = 2;
 
     FirebaseStorage storage = FirebaseStorage.getInstance();
 
@@ -48,29 +57,26 @@ public class ViewingActivity extends AppCompatActivity implements OnItemClickLis
 
     private ImageAdapter imageAdapter;
 
-    private static final String TAG = "FolderActivity";
+    private static final String TAG = "ViewingActivity";
     private static int countInterval = 0;
     private static boolean continuePlaying = true;
     public ArrayList<Image> imageArrayList = new ArrayList<>();
 
     private Uri imageUri = null;
 
-    private Folder f;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_viewing);
 
-
-
+        Intent intent = getIntent();
+        String json = intent.getStringExtra("myjson");
         Gson gson = new Gson();
-        Folder f1 = gson.fromJson(getIntent().getStringExtra("myjson"), Folder.class);
-        //TODO: use gson to recieve name of folder
-//        String fname = f.getName();
+        Folder f1 = gson.fromJson(json, Folder.class);
 
+        String fname = f1.getName();
         TextView viewingTitle = findViewById(R.id.textView_ViewingPage_title);
-//        viewingTitle.setText("" + fname);
+        viewingTitle.setText("" + fname);
 
 
         RecyclerView recyclerView = findViewById(R.id.recycleritem_viewing_images);
@@ -123,8 +129,17 @@ public class ViewingActivity extends AppCompatActivity implements OnItemClickLis
         addFromCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                startActivityForResult(takePicture, 0);
+                if (ContextCompat.checkSelfPermission(ViewingActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    // Permission is already granted, proceed with the operation.
+                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    startActivityForResult(intent, REQUEST_WRITE_EXTERNAL_STORAGE);
+                } else {
+                    // Permission is not granted, request it.
+                    ActivityCompat.requestPermissions(ViewingActivity.this,
+                            new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                            REQUEST_WRITE_EXTERNAL_STORAGE);
+                }
             }
         });
 
@@ -203,17 +218,22 @@ public class ViewingActivity extends AppCompatActivity implements OnItemClickLis
         });
 
     }
-//when know how:
-    StorageReference storageRef = storage.getReference();
 
-    StorageReference inFolder = storageRef.child("folders");
+
 
     protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) {
         super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
         switch(requestCode) {
-            case 0:
+            case REQUEST_WRITE_EXTERNAL_STORAGE: //camera
                 if(resultCode == RESULT_OK){
-                    Uri selectedImage = imageReturnedIntent.getData();
+
+                    Bitmap bitmap = (Bitmap) imageReturnedIntent.getExtras().get("data");
+                    //convert bitmap to uri
+                    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+                    String path = MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "Title", null);
+                    Uri selectedImage = Uri.parse(path);
+
                     imageUri = selectedImage;
                     presenter.add();
                 }
@@ -234,19 +254,19 @@ public class ViewingActivity extends AppCompatActivity implements OnItemClickLis
 
     @Override
     public void onItemClick(int index) {
-
         Log.e(TAG, "clicked" + index);
-
+        Uri uri = imageArrayList.get(index).getImgUri();
         ImageView image = findViewById(R.id.imageView_viewing_mainImage);
-        image.setImageResource(R.drawable.red_star);
+
+        image.setImageURI(uri);
     }
 
     public void setDefaultFields(ArrayList<Image> images) {
         this.imageArrayList.clear();
         this.imageArrayList.addAll(images);
 
-        imageAdapter.notifyDataSetChanged();
 
+        imageAdapter.notifyDataSetChanged();
 
     }
 
@@ -288,8 +308,22 @@ public class ViewingActivity extends AppCompatActivity implements OnItemClickLis
     }
 
     public Folder getFolder() {
-        //TODO: use gson to recieve folder
-        Folder folder = new Folder();
-        return folder;
+
+        Intent intent = getIntent();
+        String json = intent.getStringExtra("myjson");
+        Gson gson = new Gson();
+        Folder f1 = gson.fromJson(json, Folder.class);
+
+        return f1;
+    }
+
+    public void display(String message) {
+        Log.e(TAG, message);
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+    public void notifydatasetwaschanged() {
+        Log.e(TAG, "notifydatasetwaschanged");
+        imageAdapter.notifyDataSetChanged();
+
     }
 }

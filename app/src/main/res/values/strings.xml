@@ -3,7 +3,7 @@
     <string name="email_hint">Email:</string>
     <string name="pass_hint">Password:</string>
     <string name="login">Login</string>
-    <string name="signup">Create an account</string>
+    <string name="signup">Sign Up</string>
     <string name="welcome">Welcome</string>
     <string name="hint_subject">Subject:</string>
     <string name="confirm">Confirm</string>

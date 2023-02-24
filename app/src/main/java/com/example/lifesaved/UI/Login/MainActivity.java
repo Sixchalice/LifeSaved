@@ -13,6 +13,7 @@ import android.widget.Toast;
 import com.example.lifesaved.R;
 import com.example.lifesaved.UI.Folders.HomePageActivity;
 import com.example.lifesaved.persistence.Repository;
+import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -58,6 +59,34 @@ public class MainActivity extends AppCompatActivity implements Repository.UserLi
                 presenter.RegisterClick();
             }
         });
+
+//        Button submit = findViewById();
+//        submit.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                TabLayout tabLayout = findViewById(R.id.tab_layout);
+//                tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+//                    @Override
+//                    public void onTabSelected(TabLayout.Tab tab) {
+//                        if (tab.getPosition() == 0) { //login
+//                            presenter.loginClick();
+//                        } else if (tab.getPosition() == 1) { // register
+//                            presenter.RegisterClick();
+//                        }
+//                    }
+//
+//                    @Override
+//                    public void onTabUnselected(TabLayout.Tab tab) {
+//
+//                    }
+//
+//                    @Override
+//                    public void onTabReselected(TabLayout.Tab tab) {
+//
+//                    }
+//                });
+//            }
+//        });
     }
 
     public String getEmail() {

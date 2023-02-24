@@ -24,7 +24,11 @@ public class Folder {
         this.name = name;
         this.amntOfImages = 0;
     }
-
+    public Folder(String name, String fid) {
+        this.name = name;
+        this.fid = fid;
+        this.amntOfImages = 0;
+    }
     public Folder(){}
     public String getName() {
         return name;
