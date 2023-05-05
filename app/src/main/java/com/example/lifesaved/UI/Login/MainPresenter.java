@@ -20,75 +20,77 @@ import java.util.regex.Pattern;
 public class MainPresenter {
     private MainActivity view;
     private FirebaseAuth mAuth;
-    private Dialog dialog;
 
-    public MainPresenter(MainActivity view, FirebaseAuth mAuth, Dialog dialog) {
+    public MainPresenter(MainActivity view, FirebaseAuth mAuth) {
         this.view = view;
         this.mAuth = mAuth;
-        this.dialog = dialog;
+
     }
 
+    public boolean checkEmailValidity(String email) {
+        String regex = "^(.+)@(.+)$";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(email);
+        return matcher.matches();
+    }
 
     public void loginClick() {
-        boolean correctCredentials = true;
         String email = view.getEmail();
         String password = view.getPassword();
-
-
-        try {
-            mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(view, new OnCompleteListener<AuthResult>() {
-                @Override
-                public void onComplete(@NonNull Task<AuthResult> task) {
-                    if (task.isSuccessful()) {
-                        view.navigateToNextPage();
-                    } else {
-                        view.notifyOfError();
+        boolean validity = checkEmailValidity(email);
+        if (validity) {
+            try {
+                mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(view, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            view.navigateToNextPage();
+                        } else {
+                            view.notifyOfError("Incorrect email or password");
+                        }
                     }
-                }
-            });
-            SharedPreferences sharedPreferences = view.getSharedPreferences("infoFile", MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString("username", email);
-            editor.commit();
+                });
+                SharedPreferences sharedPreferences = view.getSharedPreferences("infoFile", MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString("username", email);
+                editor.commit();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-        catch (Exception e) {
-            e.printStackTrace();
-
-        }
-
     }
 
     public void RegisterClick() {
-        String email = view.getDialogEmail();
-        String password = view.getDialogPassword();
+        String email = view.getEmail();
+        String password = view.getPassword();
+        boolean validity = checkEmailValidity(email);
 
-        String regex = "^(.+)@(.+)$";
-        Pattern pattern = Pattern.compile(regex);
-
-        Matcher matcher = pattern.matcher(email);
-
-
-        if (matcher.matches()) {
+        if (validity) {
             mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(view, new OnCompleteListener<AuthResult>() {
                 @Override
                 public void onComplete(@NonNull Task<AuthResult> task) {
                     if (task.isSuccessful()) {
+                        addUser(email);
                         view.navigateToNextPage();
                     } else {
                         //if sign in fails, display a message to the user
-                        view.notifyOfError();
+                        view.notifyOfError("Email already in use");
                     }
                 }
             });
-
             SharedPreferences sharedPreferences = view.getSharedPreferences("infoFile", MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putString("username", email);
+//            editor.putString("password", password);
             editor.commit();
-
         } else {
             view.emailError();
         }
-
+    }
+    public void addUser(String email) {
+        Repository.getInstance().addUser(FirebaseAuth.getInstance().getUid(), email);
     }
 }
+
+

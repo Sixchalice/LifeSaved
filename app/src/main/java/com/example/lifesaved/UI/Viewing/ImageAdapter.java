@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.lifesaved.UI.OnItemClickListener;
 import com.example.lifesaved.R;
+import com.example.lifesaved.models.Image;
 
 import java.util.ArrayList;
 

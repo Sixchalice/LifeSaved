@@ -1,7 +1,6 @@
 package com.example.lifesaved.persistence;
 
-import com.example.lifesaved.UI.Folders.Folder;
-
+import com.example.lifesaved.models.Folder;
 import java.util.ArrayList;
 
 public class FolderDTO {

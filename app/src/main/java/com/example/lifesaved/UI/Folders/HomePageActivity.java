@@ -1,5 +1,6 @@
 package com.example.lifesaved.UI.Folders;
 
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import android.Manifest;
 import androidx.annotation.NonNull;
@@ -9,24 +10,25 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
-import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.icu.text.CaseMap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.view.Menu;
+import android.view.GestureDetector;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,19 +36,21 @@ import android.widget.Toast;
 import com.example.lifesaved.UI.Login.MainActivity;
 import com.example.lifesaved.R;
 import com.example.lifesaved.UI.OnItemClickListener;
+import com.example.lifesaved.UI.OnLongClickListener;
+import com.example.lifesaved.UI.Settings.SettingsActivity;
 import com.example.lifesaved.UI.Viewing.ViewingActivity;
+import com.example.lifesaved.models.Folder;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.navigation.NavigationBarView;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.util.ArrayList;
 
-public class HomePageActivity extends AppCompatActivity implements OnItemClickListener {
+public class HomePageActivity extends AppCompatActivity implements OnItemClickListener, OnLongClickListener {
 
     private static final int REQUEST_WRITE_EXTERNAL_STORAGE = 2;
     public static final int GALLERY_REQUEST_CODE = 1;
@@ -55,23 +59,25 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
     public ArrayList<Folder> folderArrayList = new ArrayList<>();
 
     private HomePresenter presenter;
-    private Dialog dialog;
-
-    // final ProgressDialog progressDialog = new ProgressDialog(this);
+    private Dialog dialogAddFolder;
+    private Dialog dialogShare;
 
     private FoldersAdapter folderAdapter;
-
+    AutoCompleteTextView actv;
     private Uri imageUri = null;
+    private int recentFolderNumber = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home_page);
 
+        dialogShare = new Dialog(this);
+        dialogShare.setContentView(R.layout.dialog_sharing_folder);
 
-
-
-        dialog = new Dialog(this);
-        dialog.setContentView(R.layout.dialog_add_folder);
+        actv = (AutoCompleteTextView) dialogShare.findViewById(R.id.autoCompleteTextView);
+        dialogAddFolder = new Dialog(this);
+        dialogAddFolder.setContentView(R.layout.dialog_add_folder);
 
         RecyclerView recyclerView = findViewById(R.id.recyclerview_folders);
 
@@ -81,6 +87,7 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
 
         folderAdapter = new FoldersAdapter(folderArrayList);
         folderAdapter.setListener(this);
+        folderAdapter.setLongClickListener(this);
         recyclerView.setAdapter(folderAdapter);
 
         presenter = new HomePresenter(this);
@@ -89,34 +96,48 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                dialog.show();
+                dialogAddFolder.show();
 
-                Button submit = dialog.findViewById(R.id.dialog_button_homepage_addfolder_confirm);
+                Button submit = dialogAddFolder.findViewById(R.id.dialog_button_homepage_addfolder_confirm);
                 submit.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
                         presenter.add();
-
+                        EditText editText = dialogAddFolder.findViewById(R.id.dialog_editText_homepage_subject);
+                        editText.setText("");
+                        ImageView imageView = dialogAddFolder.findViewById(R.id.imageView_dialog_addfolder_viewimage);
+                        imageView.setImageResource(android.R.color.transparent);
                         //progressDialog.setTitle("Uploading...");
                         //progressDialog.show();
 
-                        dialog.dismiss();
+                        dialogAddFolder.dismiss();
                     }
                 });
             }
         });
 
-        Button updateUserIds = findViewById(R.id.button_homepage_updatenew_user);
+        FloatingActionButton updateUserIds = findViewById(R.id.floatingActionButton_homepage_share);
         updateUserIds.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                presenter.updateUserIds("123456", "test1");
-            }
-        });
-        //read from database for folder per user:
+                dialogShare.show();
 
+                Button submit = dialogShare.findViewById(R.id.button_dialolg_sharing_submit);
+                submit.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        EditText email = dialogShare.findViewById(R.id.editText_dialog_sharing_email);
+                        dialogShare.dismiss();
+                        presenter.AddUserIdToFolder(email.getText().toString());
+                        email.setText("");
+                        actv.setText("");
+                    }
+                });
+            }
+
+        });
         //button 1
-        ImageView addFromGallery = dialog.findViewById(R.id.imageview_dialog_add_img_to_folder_from_gallery);
+        ImageView addFromGallery = dialogAddFolder.findViewById(R.id.imageview_dialog_add_img_to_folder_from_gallery);
         addFromGallery.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -127,7 +148,7 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
             }
         });
         //button 2
-        ImageView addFromCamera = dialog.findViewById(R.id.imageview_dialog_add_img_to_folder_from_camera);
+        ImageView addFromCamera = dialogAddFolder.findViewById(R.id.imageview_dialog_add_img_to_folder_from_camera);
         addFromCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -146,15 +167,42 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
 
             }
         });
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setSelectedItemId(R.id.page_home);
+        bottomNavigationView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                GsonBuilder builder = new GsonBuilder();
+                builder.serializeNulls();
+                Gson gson = builder.create();
+
+                switch (item.getItemId()) {
+                    case R.id.page_home:
+                        break;
+
+                    case R.id.page_settings:
+                        Intent intent2 = new Intent(HomePageActivity.this, SettingsActivity.class);
+                        startActivity(intent2);
+                        break;
+
+                    case R.id.page_logout:
+                        FirebaseAuth.getInstance().signOut();
+                        Intent intent1 = new Intent(HomePageActivity.this, MainActivity.class);
+                        startActivity(intent1);
+                        break;
+                }
+                return true;
+            }
+        });
     }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent imageReturnedIntent) {
         super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
         Log.e(TAG, "onActivityResult: " + requestCode + " " + resultCode + " " + imageReturnedIntent);
-        switch(requestCode) {
+        switch (requestCode) {
             case REQUEST_WRITE_EXTERNAL_STORAGE: //camera
                 if (resultCode == RESULT_OK) {
-
 
                     Bitmap bitmap = (Bitmap) imageReturnedIntent.getExtras().get("data");
                     //convert bitmap to uri
@@ -164,36 +212,32 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
                     Uri selectedImage = Uri.parse(path);
 
                     imageUri = selectedImage;
-                    ImageView imageView = dialog.findViewById(R.id.imageView_dialog_addfolder_viewimage);
+                    ImageView imageView = dialogAddFolder.findViewById(R.id.imageView_dialog_addfolder_viewimage);
                     imageView.setImageURI(selectedImage);
                 }
-
                 break;
             case GALLERY_REQUEST_CODE: //gallery
                 if (resultCode == RESULT_OK) {
                     Uri selectedImage = imageReturnedIntent.getData();
                     /*  def a better way   */
                     imageUri = selectedImage;
-                    ImageView imageView = dialog.findViewById(R.id.imageView_dialog_addfolder_viewimage);
+                    ImageView imageView = dialogAddFolder.findViewById(R.id.imageView_dialog_addfolder_viewimage);
                     imageView.setImageURI(selectedImage);
 
                     if (selectedImage != null)
                         Log.e(TAG, "onActivityResult: " + selectedImage.toString());
-
                 }
-
                 break;
-
         }
     }
 
     @Override
     public void onItemClick(int index) {
+        recentFolderNumber = index;
         Log.e(TAG, "clicked" + index);
         Intent intent = new Intent(this, ViewingActivity.class);
         Folder f1 = folderArrayList.get(index);
 
-        //:TODO use gson to pass folder
         GsonBuilder builder = new GsonBuilder();
         builder.serializeNulls();
         Gson gson = builder.create();
@@ -210,6 +254,17 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
         this.folderArrayList.clear();
         this.folderArrayList.addAll(Folders);
 
+        String[] fNames = new String[Folders.size()];
+        for (int i = 0; i < fNames.length; i++) {
+            fNames[i] = Folders.get(i).getName();
+        }
+//        actv = (AutoCompleteTextView) dialogShare.findViewById(R.id.autoCompleteTextView);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>
+                (this, android.R.layout.select_dialog_item, fNames);
+        actv.setThreshold(0);
+        actv.setAdapter(adapter);//setting the adapter data into the AutoCompleteTextView
+
+
         folderAdapter.notifyDataSetChanged();
 
         Log.e(TAG, "setDefaultFields: " + folderArrayList.size() + " " + folderArrayList.toString());
@@ -219,41 +274,22 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
         SharedPreferences sharedPreferences = getSharedPreferences("infoFile", MODE_PRIVATE);
         String user = sharedPreferences.getString("username", "");
         String result = user.replaceAll("@.+$", "");
-        user = result.replaceAll("\\W+"," ");
+        user = result.replaceAll("\\W+", " ");
 
         welcome.setText("Welcome " + user);
 
     }
 
     public String GetSubject() {
-        EditText subject = dialog.findViewById(R.id.dialog_editText_homepage_subject);
+        EditText subject = dialogAddFolder.findViewById(R.id.dialog_editText_homepage_subject);
         return subject.getText().toString();
     }
+
     public Uri getUri() {
         return imageUri;
     }
 
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        super.onCreateOptionsMenu(menu);
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menuitem_logout:
-                FirebaseAuth.getInstance().signOut();
-                sendToLogin();
-                finish();
-
-                return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-    public void sendToLogin() {
+    void sendToLogin() {
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
     }
@@ -265,8 +301,31 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
     }
 
     public void notifydatasetwaschanged() {
-
         folderAdapter.notifyDataSetChanged();
+    }
 
+    public String getFolderName() {
+        return actv.getText().toString();
+    }
+
+
+    @Override
+    public void passImageButton(ImageButton buttonView, int index) {
+        buttonView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.e(TAG, "onDeleteClick: " + "clicked");
+                Folder f1 = folderArrayList.get(index);
+                presenter.deleteFolder(f1);
+            }
+        });
+        ConstraintLayout constraintLayout = findViewById(R.id.constraintLayout_homepage);
+        constraintLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.e(TAG, "onConstraintLayoutClick: " + "clicked");
+                buttonView.setVisibility(View.INVISIBLE);
+            }
+        });
     }
 }
