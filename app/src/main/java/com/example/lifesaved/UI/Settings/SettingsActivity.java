@@ -3,68 +3,48 @@ package com.example.lifesaved.UI.Settings;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
 
-import android.Manifest;
-import android.app.AlarmManager;
 import android.app.Dialog;
-import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.os.Build;
+import android.net.Uri;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.style.UnderlineSpan;
+import android.text.util.Linkify;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.Spinner;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.lifesaved.MyWorker;
 import com.example.lifesaved.R;
 import com.example.lifesaved.UI.Folders.HomePageActivity;
 import com.example.lifesaved.UI.Login.MainActivity;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 import com.google.android.material.textfield.TextInputLayout;
-import com.google.firebase.auth.AuthCredential;
-import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-import java.util.concurrent.TimeUnit;
-
-public class SettingsActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener{
+public class SettingsActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
     private int worker_repeat_interval = 1440; //24hrs in minutes
     private static final String TAG = "SettingsActivity";
     private static final int NOTIFICATION_REQUEST_ID = 9;
     private FirebaseUser user;
 
-    private String[] SpinnerItems = {"Every day", "Every 2 days", "Every 3 days", "Every 4 days", "Every 5 days", "Every 6 days", "Every 7 days"};
-    private int[] SpinnerItemsIntervals = {1440, 2880, 4320, 5760, 7200, 8640, 10080};
+    private String[] SpinnerItems = {"Never", "Every day", "Every 2 days", "Every 3 days", "Every 4 days", "Every 5 days", "Every 6 days", "Every 7 days"};
+    private int[] SpinnerItemsIntervals = {0, 1440, 2880, 4320, 5760, 7200, 8640, 10080}; //in minutes
     private FirebaseAuth mAuth = FirebaseAuth.getInstance();
 
     private Dialog dialog;
     private SettingsPresenter presenter;
-    private Switch notifsSwitch;
     private int spinnerSelectedItem = -1;
-
+    private Spinner dropdown;
 
 
     @Override
@@ -74,59 +54,6 @@ public class SettingsActivity extends AppCompatActivity implements AdapterView.O
 
         presenter = new SettingsPresenter(this);
 
-        dialog = new Dialog(this);
-        dialog.setContentView(R.layout.dialog_update_email);
-
-        notifsSwitch = findViewById(R.id.switch_settings_push_notifications);
-
-        CheckIfNotificationsAreOn();
-
-        notifsSwitch.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (notifsSwitch.isChecked()){
-                    SharedPreferences sharedPreferences = getSharedPreferences("infoFile", MODE_PRIVATE);
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    editor.putBoolean("notifications", true);
-                    editor.commit();
-
-                    notifsSwitch.setText("Notifications are on");
-                    Log.e(TAG, "onClick: Switch is checked on" );
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        if (ActivityCompat.checkSelfPermission(SettingsActivity.this,Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                            requestPermissions(new String[] {Manifest.permission.POST_NOTIFICATIONS}, 1);
-                        }
-                        else {
-                            PeriodicWorkRequest periodicWorkRequest = new
-                                    PeriodicWorkRequest.Builder(MyWorker.class, worker_repeat_interval, TimeUnit.MINUTES)
-//                                    .setInitialDelay(2000, TimeUnit.MILLISECONDS)
-                                    .addTag("WORKER_PUSH_NOTIFICATION")
-                                    .build();
-                            WorkManager.getInstance(SettingsActivity.this).enqueue(periodicWorkRequest);
-                        }
-                    } else {
-                        PeriodicWorkRequest periodicWorkRequest = new
-                                PeriodicWorkRequest.Builder(MyWorker.class, worker_repeat_interval, TimeUnit.MINUTES)
-//                                .setInitialDelay(2000, TimeUnit.MILLISECONDS)
-                                .addTag("WORKER_PUSH_NOTIFICATION")
-                                .build();
-                        WorkManager.getInstance(SettingsActivity.this).enqueue(periodicWorkRequest);
-                    }
-                }
-                else{
-                    SharedPreferences sharedPreferences = getSharedPreferences("infoFile", MODE_PRIVATE);
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    editor.putBoolean("notifications", false);
-                    editor.commit();
-
-                    notifsSwitch.setText("Notifications are off");
-                    Log.e(TAG, "onClick: Switch is checked off" );
-
-                    WorkManager.getInstance(SettingsActivity.this).cancelAllWorkByTag("WORKER_PUSH_NOTIFICATION");
-                }
-            }
-        });
-
         mAuth.addAuthStateListener(new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
@@ -134,8 +61,46 @@ public class SettingsActivity extends AppCompatActivity implements AdapterView.O
                     // If user is not logged in, redirect to login page
                     Intent loginIntent = new Intent(SettingsActivity.this, MainActivity.class);
                     startActivity(loginIntent);
-                    Log.e(TAG, "onAuthStateChanged: User is not logged in" );
+                    Log.e(TAG, "onAuthStateChanged: User is not logged in");
                 }
+            }
+        });
+
+        dialog = new Dialog(this);
+        dialog.setContentView(R.layout.dialog_change_password);
+
+        TextView resetPassword = (TextView) findViewById(R.id.textView_settings_reset_password);
+        SpannableString content = new SpannableString("Reset password");
+        content.setSpan(new UnderlineSpan(), 0, content.length(), 0);
+        resetPassword.setText(content);
+
+        resetPassword.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.show();
+                dialog.findViewById(R.id.button_dialog_settings_submit_password_change).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        presenter.resetPassword();
+                    }
+                });
+            }
+        });
+
+
+        TextView contactUs = (TextView) findViewById(R.id.textView_settings_contact_us);
+        SpannableString content1 = new SpannableString("Contact us");
+        content1.setSpan(new UnderlineSpan(), 0, content1.length(), 0);
+        contactUs.setText(content1);
+
+        contactUs.setAutoLinkMask(Linkify.EMAIL_ADDRESSES);
+        contactUs.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_SENDTO);
+                intent.setData(Uri.parse("mailto:noamramny@gmail.com"));
+                intent.setPackage("com.google.android.gm");
+                startActivity(intent);
             }
         });
 
@@ -163,65 +128,53 @@ public class SettingsActivity extends AppCompatActivity implements AdapterView.O
                 return true;
             }
         });
-        Spinner dropdown = findViewById(R.id.spinner_settings_notif_intervals);
+
+        Button applyNotifInterval = findViewById(R.id.button_settings_submit_notif_interval_selected);
+        applyNotifInterval.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (spinnerSelectedItem != -1) {
+                    presenter.applyNotifInterval(worker_repeat_interval);
+                    SaveNotifSetting();
+                }
+            }
+        });
+
+
+        dropdown = findViewById(R.id.spinner_settings_notif_intervals);
         //create a list of items for the spinner.
         //create an adapter to describe how the items are displayed, adapters are used in several places in android.
         //There are multiple variations of this, but this is the basic variant.
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, SpinnerItems){
-            @Override
-            public View getDropDownView(int position, View convertView, ViewGroup parent)
-            {
-                View v = null;
-                v = super.getDropDownView(position, null, parent);
-                // If this is the selected item position
-                if (position == spinnerSelectedItem) {
-                    v.setBackgroundColor(Color.BLUE);
-                }
-                else {
-                    // for other views
-                    v.setBackgroundColor(Color.WHITE);
 
-                }
-                return v;
-            }
-        };
+        ArrayAdapter adapter = new ArrayAdapter<String>(this, com.bumptech.glide.R.layout.support_simple_spinner_dropdown_item, SpinnerItems);
         //set the spinners adapter to the previously created one.
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         dropdown.setAdapter(adapter);
 
-        dropdown.setOnItemSelectedListener(this);
-
-
-
-        Button ChangeEmail = findViewById(R.id.button_settings_change_email);
-        ChangeEmail.setOnClickListener(new View.OnClickListener() {
+        dropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onClick(View v) {
-                dialog.show();
-                Button submit = dialog.findViewById(R.id.button_dialog_settings_submit);
-                submit.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        SharedPreferences sharedPreferences = getSharedPreferences("infoFile", MODE_PRIVATE);
-                        String oldemail = sharedPreferences.getString("username", "");
-                        presenter.updateEmail(oldemail);
-                        dialog.dismiss();
-                    }
-                });
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                worker_repeat_interval = SpinnerItemsIntervals[position];
+                spinnerSelectedItem = position;
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
             }
         });
+
+        SharedPreferences sharedPreferences = getSharedPreferences("infoFile", MODE_PRIVATE);
+        int notificationsindex = sharedPreferences.getInt("notificationsindex", 0);
+        dropdown.setSelection(notificationsindex);
+
     }
 
-    private void CheckIfNotificationsAreOn() {
+    public void SaveNotifSetting() {
         SharedPreferences sharedPreferences = getSharedPreferences("infoFile", MODE_PRIVATE);
-        boolean notifications = sharedPreferences.getBoolean("notifications", false);
-        if (notifications){
-            notifsSwitch.setChecked(true);
-            notifsSwitch.setText("Notifications are on");
-        }
-        else{
-            notifsSwitch.setChecked(false);
-            notifsSwitch.setText("Notifications are off");
-        }
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt("notificationsindex", spinnerSelectedItem);
+        editor.commit();
     }
 
 
@@ -236,13 +189,9 @@ public class SettingsActivity extends AppCompatActivity implements AdapterView.O
 
     }
 
-    public String getNewEmail() {
-        TextInputLayout email = dialog.findViewById(R.id.textInputLayout_dialog_settings_email);
-        return email.getEditText().getText().toString();
-    }
 
-    public String getPassword() {
-        TextInputLayout password = dialog.findViewById(R.id.textInputLayout_dialog_settings_password);
+    public String getOldPassword() {
+        TextInputLayout password = dialog.findViewById(R.id.textInputLayout_dialog_settings_old_password);
         Log.e(TAG, "getPassword: " + password.getEditText().getText().toString());
         return password.getEditText().getText().toString();
     }
@@ -251,4 +200,39 @@ public class SettingsActivity extends AppCompatActivity implements AdapterView.O
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
+    public String getNewPassword() {
+        TextInputLayout newPassword = dialog.findViewById(R.id.textInputLayout_dialog_settings_first_password);
+        String firstPassword = newPassword.getEditText().getText().toString();
+
+        return firstPassword;
+
+    }
+
+
+    public boolean passwordsMatch() {
+        TextInputLayout newPassword = dialog.findViewById(R.id.textInputLayout_dialog_settings_first_password);
+        String firstPassword = newPassword.getEditText().getText().toString();
+
+        TextInputLayout newPasswordConfirm = dialog.findViewById(R.id.textInputLayout_dialog_settings_second_password);
+        String secondPassword = newPasswordConfirm.getEditText().getText().toString();
+
+        if (firstPassword.equals(secondPassword)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void passwordsDontMatch() {
+        //Passwords dont match: show error message
+        Toast.makeText(this, "Passwords dont match", Toast.LENGTH_SHORT).show();
+    }
+
+    public void showMessage(String s) {
+        Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
+    }
+
+    public void closeDialog() {
+        dialog.dismiss();
+    }
 }

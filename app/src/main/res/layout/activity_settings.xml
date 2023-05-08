@@ -26,48 +26,167 @@
         android:layout_marginTop="32dp"
         android:text="@string/settings"
         android:textSize="34sp"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Spinner
-        android:id="@+id/spinner_settings_notif_intervals"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@android:drawable/btn_dropdown"
-        android:spinnerMode="dropdown"
-        app:layout_constraintBottom_toTopOf="@+id/button_settings_change_email"
-        app:layout_constraintEnd_toEndOf="parent" />
+    <!--        style="@style/Widget.AppCompat.Spinner"-->
+<!--        android:layout_width="203dp"-->
+<!--        android:layout_height="44dp"-->
+<!--        android:background="@android:drawable/btn_dropdown"-->
+<!--        android:spinnerMode="dropdown"-->
+<!--        tools:layout_editor_absoluteX="19dp"-->
+<!--        tools:layout_editor_absoluteY="191dp" />-->
 
-    <Button
-        android:id="@+id/button_settings_change_email"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="368dp"
-        android:text="@string/change_email"
-        app:layout_constraintBottom_toBottomOf="@+id/bottom_navigation"
-        app:layout_constraintStart_toStartOf="parent" />
+<!--    <Spinner-->
+<!--        android:id="@+id/spinner_settings_notif_intervals"-->
+<!--        style="@style/Widget.AppCompat.Spinner"-->
+<!--        -->
+<!--        android:layout_width="196dp"-->
+<!--        android:layout_height="45dp"-->
+<!--        android:layout_margin="10dp"-->
+<!--        android:layout_marginStart="8dp"-->
+<!--        android:layout_marginTop="24dp"-->
+<!--        android:background="@drawable/spinner_bg"-->
+<!--        android:dropDownWidth="300dp"-->
+<!--        android:dropDownVerticalOffset="?attr/dropdownListPreferredItemHeight"-->
+<!--        android:paddingRight="14dp"-->
+<!--        android:popupBackground="@android:color/white"-->
+<!--        android:popupElevation="3dp"-->
+<!--        android:stateListAnimator="@drawable/spinner_sla"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/textview_settings_selectinterval" />-->
+
+    <RelativeLayout
+        android:id="@+id/relativeLayout_settings_dropdown"
+        android:layout_width="251dp"
+        android:layout_height="45dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/relativelayout_bg"
+        android:padding="8dp"
+
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textview_settings_selectinterval">
+
+        <Spinner
+            android:id="@+id/spinner_settings_notif_intervals"
+            style="@style/Widget.AppCompat.DropDownItem.Spinner"
+            android:layout_width="match_parent"
+            android:layout_height="70dp" />
+    </RelativeLayout>
 
     <TextView
         android:id="@+id/textview_settings_selectinterval"
-        android:layout_width="127dp"
-        android:layout_height="60dp"
-        android:layout_marginEnd="32dp"
+        android:layout_width="391dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:fontFamily="sans-serif"
         android:text="@string/select_notifs"
-        app:layout_constraintBottom_toTopOf="@+id/spinner_settings_notif_intervals"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView_settings_Notifications" />
 
-    <Switch
-        android:id="@+id/switch_settings_push_notifications"
+    <ImageView
+        android:id="@+id/imageView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginBottom="12dp"
-        android:text="Switch"
-        app:layout_constraintBottom_toTopOf="@+id/button_settings_change_email"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:layout_marginStart="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/textView_settings_Notifications"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/textView_settings_Notifications"
+        app:srcCompat="@drawable/ic_baseline_notifications_bell" />
+
+    <TextView
+        android:id="@+id/textView_settings_Notifications"
+        android:layout_width="102dp"
+        android:layout_height="22dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginTop="48dp"
+        android:text="@string/notifications"
+        android:textSize="16sp"
+        app:layout_constraintStart_toEndOf="@+id/imageView"
+        app:layout_constraintTop_toBottomOf="@+id/textView_settings_title" />
+
+    <Button
+        android:id="@+id/button_settings_submit_notif_interval_selected"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="3dp"
+        android:layout_marginEnd="12dp"
+        android:text="@string/apply"
+        app:cornerRadius="@dimen/cardview_default_radius"
+        app:layout_constraintBottom_toBottomOf="@+id/relativeLayout_settings_dropdown"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.42"
+        app:layout_constraintStart_toEndOf="@+id/relativeLayout_settings_dropdown" />
+
+    <com.google.android.material.divider.MaterialDivider
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:dividerColor="@color/purple_200"
+        app:layout_constraintBottom_toTopOf="@+id/textView_settings_Notifications"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView_settings_title" />
+
+    <com.google.android.material.divider.MaterialDivider
+        android:id="@+id/materialDivider2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="44dp"
+        app:dividerColor="@color/purple_200"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/relativeLayout_settings_dropdown" />
+
+    <TextView
+        android:id="@+id/textView_settings_reset_password"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginTop="40dp"
+        android:text="@string/reset_password"
+        android:textColor="@color/purple_500"
+        android:textSize="15sp"
+        app:layout_constraintStart_toEndOf="@+id/imageView_settings_password_icon"
+        app:layout_constraintTop_toBottomOf="@+id/materialDivider2" />
+
+    <ImageView
+        android:id="@+id/imageView_settings_password_icon"
+        android:layout_width="30dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/textView_settings_reset_password"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/textView_settings_reset_password"
+        app:srcCompat="@drawable/icon_lock" />
+
+    <TextView
+        android:id="@+id/textView_settings_contact_us"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginTop="28dp"
+        android:text="@string/contact_us"
+        android:textColor="@color/purple_500"
+        android:textSize="15sp"
+        app:layout_constraintStart_toEndOf="@+id/imageView_settings_contact_us_icon"
+        app:layout_constraintTop_toBottomOf="@+id/textView_settings_reset_password" />
+
+    <ImageView
+        android:id="@+id/imageView_settings_contact_us_icon"
+        android:autoLink="email"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        app:layout_constraintBottom_toBottomOf="@+id/textView_settings_contact_us"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/textView_settings_contact_us"
+        app:srcCompat="@drawable/ic_baseline_email_24" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

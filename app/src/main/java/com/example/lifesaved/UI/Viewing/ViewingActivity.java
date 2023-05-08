@@ -90,8 +90,8 @@ public class ViewingActivity extends AppCompatActivity implements OnItemClickLis
 
     private int selectedTimer = 1;
     private int selectedSpinnerIndex = 0;
-    private String[] SpinnerItems = new String[]{"0.5", "0.75", "1.00", "1.50", "2.00", "2.50", "3.00", "3.50", "4.00"};
-    private int[] SpinnerItemsInt = new int[]{500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000};
+    private String[] SpinnerItems = new String[]{"Select interval in seconds", "0.5", "0.75", "1.00", "1.50", "2.00", "2.50", "3.00", "3.50", "4.00"};
+    private int[] SpinnerItemsInt = new int[]{0,500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000};
     private Folder process;
     private MySpinnerDialog spinnerDialog = new MySpinnerDialog();
 
@@ -226,8 +226,20 @@ public class ViewingActivity extends AppCompatActivity implements OnItemClickLis
         //create a list of items for the spinner.
         //create an adapter to describe how the items are displayed, adapters are used in several places in android.
         //There are multiple variations of this, but this is the basic variant.
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, SpinnerItems);
-        //set the spinners adapter to the previously created one.
+        ArrayAdapter adapter = new ArrayAdapter<String>(this, com.bumptech.glide.R.layout.support_simple_spinner_dropdown_item, SpinnerItems){
+            @Override
+            public boolean isEnabled(int position) {
+                // Disable the first item (default value) so it cannot be selected
+                return position != 0;
+            }
+
+            @Override
+            public boolean areAllItemsEnabled() {
+                // Enable all items except the first (default value)
+                return false;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         dropdown.setAdapter(adapter);
 
         dropdown.setOnItemSelectedListener(this);

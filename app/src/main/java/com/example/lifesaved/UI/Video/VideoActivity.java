@@ -34,13 +34,10 @@ import java.util.ArrayList;
 
 public class VideoActivity extends AppCompatActivity {
 
-//    private static int count = 0;
 
     private VideoPresenter presenter;
 
-    private Handler endOfVideohandler;
     private Folder process;
-    public ArrayList<Image> imageArrayList = new ArrayList<>();
     private VideoView videoView;
     private String fileLocation;
     @Override
@@ -81,11 +78,6 @@ public class VideoActivity extends AppCompatActivity {
                 presenter.SaveVideoToGallery(fileLocation);
             }
         });
-    }
-
-    public void setDefaultFields(ArrayList<Image> imageArrayList) {
-        this.imageArrayList.clear();
-        this.imageArrayList.addAll(imageArrayList);
     }
 
     public void showVideo(){

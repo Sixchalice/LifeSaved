@@ -13,7 +13,7 @@
         android:layout_marginTop="16dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@android:drawable/ic_menu_crop" />
+        app:srcCompat="@android:drawable/ic_menu_gallery" />
 
     <ImageView
         android:id="@+id/imageView_selectFrom_camera"

@@ -18,18 +18,18 @@ public class Image {
         this.imgUri = uri;
         this.id = -1;
     }
-    public Image(String myUrlStr){
-        Uri uri;
-        URL url;
-        try {
-            url = new URL(myUrlStr);
-            uri = Uri.parse( url.toURI().toString() );
-            this.imgUri = uri;
-        } catch (MalformedURLException | URISyntaxException e1) {
-            e1.printStackTrace();
-            Log.e("Image", "Error in Image constructor");
-        }
-    }
+//    public Image(String myUrlStr){
+//        Uri uri;
+//        URL url;
+//        try {
+//            url = new URL(myUrlStr);
+//            uri = Uri.parse( url.toURI().toString() );
+//            this.imgUri = uri;
+//        } catch (MalformedURLException | URISyntaxException e1) {
+//            e1.printStackTrace();
+//            Log.e("Image", "Error in Image constructor");
+//        }
+//    }
     public Image() {
         this.imgUri = null;
         this.id = -1;
@@ -42,12 +42,13 @@ public class Image {
         return this.imgUri;
     }
 
+        //:TODO idek at this point
 
-    public static void toUriList(List<Image> imageList, List<Uri> uriList){
-        for (Image image : imageList) {
-            uriList.add(image.getImgUri());
-        }
-    }
+//    public static void toUriList(List<Image> imageList, List<Uri> uriList){
+//        for (Image image : imageList) {
+//            uriList.add(image.getImgUri());
+//        }
+//    }
 
     public int getId() {
         return id;

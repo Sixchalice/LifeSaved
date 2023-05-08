@@ -16,7 +16,7 @@
         android:layout_marginStart="24dp"
         android:layout_marginTop="24dp"
         android:layout_marginEnd="24dp"
-        android:layout_marginBottom="60dp"
+        android:layout_marginBottom="70dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -34,7 +34,7 @@
         app:sliderIndicatorRadius="2dp"
         app:sliderIndicatorSelectedColor="#5A5A5A"
         app:sliderIndicatorUnselectedColor="#FFF"
-        app:sliderScrollTimeInSec="1" >
+        app:sliderScrollTimeInSec="1">
 
     </com.smarteist.autoimageslider.SliderView>
 
@@ -85,36 +85,47 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_baseline_arrow_back" />
 
-    <Spinner
-        android:id="@+id/spinner_viewing_times"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@android:drawable/btn_dropdown"
-        android:spinnerMode="dropdown"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/slider_viewing" />
-
     <androidx.appcompat.widget.AppCompatToggleButton
         android:id="@+id/toggleButton_viewing_toggle_slideshow"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:text="ToggleButton"
-        android:textOff="Start"
-        android:textOn="Stop"
-        app:layout_constraintBottom_toBottomOf="@+id/spinner_viewing_times"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:textOff="Play"
+        android:textOn="Pause"
+        style="@style/MyToggleButtonStyle"
+        app:layout_constraintBottom_toBottomOf="@+id/relativeLayout_viewing_intervals"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/relativeLayout_viewing_intervals" />
 
     <Button
         android:id="@+id/button_viewing_create_video"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
         android:text="@string/create_video"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/spinner_viewing_times"
+        app:cornerRadius="@dimen/cardview_default_radius"
+        app:layout_constraintBottom_toBottomOf="@+id/relativeLayout_viewing_intervals"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/spinner_viewing_times" />
+        app:layout_constraintTop_toTopOf="@+id/relativeLayout_viewing_intervals" />
+
+    <RelativeLayout
+        android:id="@+id/relativeLayout_viewing_intervals"
+        android:layout_width="116dp"
+        android:layout_height="46dp"
+        android:background="@drawable/relativelayout_bg"
+        android:padding="8dp"
+
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/toggleButton_viewing_toggle_slideshow"
+        app:layout_constraintStart_toEndOf="@+id/button_viewing_create_video"
+        app:layout_constraintTop_toBottomOf="@+id/slider_viewing">
+
+        <Spinner
+            android:id="@+id/spinner_viewing_times"
+            style="@style/Widget.AppCompat.DropDownItem.Spinner"
+            android:layout_width="match_parent"
+            android:layout_height="70dp" />
+    </RelativeLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

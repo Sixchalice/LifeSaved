@@ -100,14 +100,15 @@ public class Repository {
     }
 
 
-    public void setNumberOfImage(int number, String fid){
+    public void setNumberOfImage(int number, String fid) {
 
         DatabaseReference myRef = FirebaseDatabase.getInstance().getReference("Folders/"+fid+"/amntOfImages");
         myRef.setValue(number);
 
-        readAllImagesInFolder(new Folder("name", fid));
-    }
-    public void uploadTheImage(int number, String fid, Uri uri){
+//        readAllImagesInFolder(new Folder("name", fid));
+        readAllImagesInFolder(fid);
+    } //done
+    public void uploadTheImage(int number, String fid, Uri uri) {
         int newplace = number + 1;
         StorageReference storageRef = FirebaseStorage.getInstance()
                 .getReference().child("folders/" + fid + "/" + newplace + ".jpg");
@@ -125,7 +126,7 @@ public class Repository {
 
             }
         });
-    }
+    } //done
 
     public void uploadMultipleImages(Folder f1,Uri uri){
 
@@ -142,23 +143,17 @@ public class Repository {
 
         });
 
-    }
+    } //done
 
-    public void readAllImagesInFolder(Folder f1) {
 
-        Log.e(TAG, "readAllImagesInFolder: " + f1.getFid());
+    public void readAllImagesInFolder(String fid) {
+
+        Log.e(TAG, "readAllImagesInFolder: " + fid);
         ArrayList<Image> images = new ArrayList<>();
 
-        int amntOfImages = f1.getAmntOfImages() + 1;
-        Log.e(TAG, "readAllImagesInFolder: " + amntOfImages);
-        Image[] imagesArr = new Image[amntOfImages];
-
-
         StorageReference storageRef = FirebaseStorage.getInstance()
-                .getReference().child("folders/" + f1.getFid());
+                .getReference().child("folders/" + fid);
         Log.e("NAME OF FILE:", storageRef.getName());
-
-
 
         storageRef.listAll().addOnCompleteListener(new OnCompleteListener<ListResult>() {
             @Override
@@ -179,7 +174,6 @@ public class Repository {
                                         @Override
                                         public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
                                             // Local temp file has been created
-
                                             String name = ref.getName();
                                             int id = 0;
                                             if(!name.equals("mainimg.jpg"))
@@ -190,7 +184,6 @@ public class Repository {
                                             image.setImgUri(fileUri);
                                             image.setId(id);
                                             images.add(image);
-
 
                                             multipleImagesListener.updateImages(images);
                                             multipleImagesListener.notifydatasetchanged();
@@ -210,7 +203,6 @@ public class Repository {
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
-
                             }
                         }).addOnFailureListener(new OnFailureListener() {
                             @Override
@@ -228,13 +220,8 @@ public class Repository {
                 Log.e(TAG, "LINE 188 onFailure: read all images from folder: " + e.getMessage());
             }
         });
-    }
+    } //done
 
-
-    public void updateUserids(String newUid, String folderName) {
-        String currentId = FirebaseAuth.getInstance().getUid();
-
-    }
 
     public Folder addFolder(Folder f1) {
         DatabaseReference myRef = database.getReference("Folders").push();
@@ -254,7 +241,7 @@ public class Repository {
         myRef.setValue(folderDTO);
 
         return f1;
-    }
+    } //done
 
     //read all folders for user
     public void readfolderforUser() {
@@ -313,7 +300,7 @@ public class Repository {
 
             }
         });
-    }
+    } //done
 
     public void UploadFolderImage(Uri uri, String folderId) {
         Log.e(TAG, "UploadFolderImage: " + uri.toString() + " " + folderId);
@@ -351,7 +338,7 @@ public class Repository {
                 folderImageListener.updateImageProgress(String.valueOf(progress));
             }
         });
-    }
+    } //done
 
 
     public void addUserIdToFolder(String uid, String folderName, String ownerId) {
@@ -386,7 +373,7 @@ public class Repository {
 
             }
         });
-    }
+    } //done
 
     public void readUserId(String email){
         Query myQuery = database.getReference("Users");
@@ -407,30 +394,25 @@ public class Repository {
             public void onCancelled(@NonNull DatabaseError error) {
             }
         });
-    }
+    } //done
     public void addUser(String uid, String email) {
         DatabaseReference myRef = FirebaseDatabase.getInstance().getReference().child("Users").push();
-        User user = new User(uid, email, false);
+        User user = new User(uid, email);
         myRef.setValue(user);
-    }
+    } //done
     static class User{
         private String uid;
         private String email;
-        private boolean enabledNotifs;
-        public User(String uid, String email, boolean enabledNotifs) {
+        public User(String uid, String email) {
             this.uid = uid;
             this.email = email;
-            this.enabledNotifs = enabledNotifs;
         }
         public User(){}
         public String getUid() { return uid; }
         public void setUid(String uid) { this.uid = uid; }
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
-        public boolean isEnabledNotifs() { return enabledNotifs; }
-        public void setEnabledNotifs(boolean enabledNotifs) { this.enabledNotifs = enabledNotifs; }
-    }
-
+    } // done
     public void deleteFolder(Folder f1, String uid) {
         DatabaseReference myRef = database.getReference("Folders");
         Query myQuery = database.getReference("Folders");
@@ -466,7 +448,7 @@ public class Repository {
 
             }
         });
-    }
+    } //done
     private void DeleteImagesOfFolder(Folder f1) {
         Log.e(TAG, "DeleteImagesOfFolder: " + f1.getFid());
         FirebaseStorage storage = FirebaseStorage.getInstance();
@@ -490,38 +472,13 @@ public class Repository {
                         Log.e(TAG, "onFailure: " + e.getMessage());
                     }
                 });
-    }
-
-    public void updateUserEmail(String uid, String email){
-        DatabaseReference myRef = database.getReference("Users");
-        Query myQuery = database.getReference("Users");
-        myQuery.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for(DataSnapshot snap : snapshot.getChildren()){
-                    User user = snap.getValue(User.class);
-                    if(user.getUid().equals(uid)) {
-                        String key = snap.getKey();
-                        Log.e(TAG, "onUpdateUserEmail: key: " + key);
-                        myRef.child(key).child("email").setValue(email);
-                        break;
-                    }
-                }
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
-        });
-    }
+    } //done
 
 
-    private static Repository instance = null; // functions written here will have access to the database
+    private static Repository instance = null;
     FirebaseDatabase database = FirebaseDatabase.getInstance("https://lifesaved2-default-rtdb.europe-west1.firebasedatabase.app/");
-    
 
 
-
-    // and will then return the info needed to the page that called it.
     private Repository() {
     }
 

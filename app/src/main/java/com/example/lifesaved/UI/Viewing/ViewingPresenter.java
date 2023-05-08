@@ -73,7 +73,7 @@ public class ViewingPresenter implements Repository.MultipleImagesListener {
         this.view = view;
         Repository.getInstance().setMultipleImagesListener(this);
 
-        Repository.getInstance().readAllImagesInFolder(view.getFolder());
+        Repository.getInstance().readAllImagesInFolder(view.getFolder().getFid());
         view.setDefaultFields(this.imageArrayList);
 
         endOfVideohandler = new Handler(){
@@ -187,10 +187,15 @@ public class ViewingPresenter implements Repository.MultipleImagesListener {
             Log.e(TAG, "addAudioToVideo: path of new audioL " + _dstFile.getAbsolutePath());
             Log.e(TAG, "addAudioToVideo: " + "length of AAC: "+ newAacLength);
 
-
-            AACTrackImpl aacTrack = new AACTrackImpl(new FileDataSourceImpl(_dstFile));
-            CroppedTrack aacCroppedTrack = new CroppedTrack(aacTrack, 1, aacTrack.getSamples().size());
-            movie.addTrack(aacCroppedTrack);
+            try{
+                AACTrackImpl aacTrack = new AACTrackImpl(new FileDataSourceImpl(_dstFile));
+                CroppedTrack aacCroppedTrack = new CroppedTrack(aacTrack, 1, aacTrack.getSamples().size());
+                movie.addTrack(aacCroppedTrack);
+            }catch (Exception e) {
+                e.printStackTrace();
+                //already exists an output file - that cant overwrite. thus we need to delete it.
+                cleanUp();
+            }
 
             //TODO: 0.25 delay breaks it here:
             Container mp4file = new DefaultMp4Builder().build(movie);
