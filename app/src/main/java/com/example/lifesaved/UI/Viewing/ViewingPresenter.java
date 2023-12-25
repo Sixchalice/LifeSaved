@@ -1,6 +1,8 @@
 package com.example.lifesaved.UI.Viewing;
 
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.RectF;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaExtractor;
@@ -25,6 +27,7 @@ import com.coremedia.iso.boxes.Container;
 import com.coremedia.iso.boxes.FileTypeBox;
 import com.coremedia.iso.boxes.MovieHeaderBox;
 import com.example.lifesaved.R;
+import com.example.lifesaved.models.Folder;
 import com.example.lifesaved.models.Image;
 import com.example.lifesaved.persistence.Repository;
 import com.google.firebase.database.core.utilities.Utilities;
@@ -107,7 +110,11 @@ public class ViewingPresenter implements Repository.MultipleImagesListener {
         view.setDefaultFields(this.imageArrayList);
 
     }
-
+    public void deleteImage(Image img, Folder currentFolder) {
+        Repository.getInstance().deleteImage(img, currentFolder);
+        imageArrayList.remove(img);
+        view.setDefaultFields(this.imageArrayList);
+    }
 
     private void saveAudioToExternalStorage(InputStream inputStream) {
         String fileName = "audio.aac"; // The name of the file you want to save
@@ -129,9 +136,14 @@ public class ViewingPresenter implements Repository.MultipleImagesListener {
         }
     }
 
+
+    public void addSilenceAACFile(String inputPath, String outputPath, int durationSeconds){
+        String cmd = " -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -t " + durationSeconds + " -c:a aac -shortest " + outputPath;
+        FFmpegKit.execute(cmd);
+    }
+
     public void trimAACFile(String inputPath, String outputPath, int durationSeconds) {
         String cmd = " -ss " + "00:00:00.000" + " -i " + inputPath + " -t " + durationSeconds + " -c " + " copy " + outputPath;
-
         FFmpegKit.execute(cmd);
 
     }
@@ -177,7 +189,8 @@ public class ViewingPresenter implements Repository.MultipleImagesListener {
                 trimAACFile(_aacFile.getAbsolutePath(), _dstFile.getAbsolutePath(), duration);
             }
             else if(mp4Length > aacLength){
-                addSilenceToAudio(_aacFile, mp4Length);
+                int duration = (int) (mp4Length - aacLength);
+                addSilenceAACFile(_aacFile.getAbsolutePath(), _dstFile.getAbsolutePath(),duration);
             }
 
 
@@ -264,76 +277,6 @@ public class ViewingPresenter implements Repository.MultipleImagesListener {
             return 0;
     }
 
-    //:TODO pretty sure this doesnt work. find way to do it using FFMPEG :)
-    private void addSilenceToAudio(File audioFile, long videoDuration) {
-        try {
-            MediaExtractor audioExtractor = new MediaExtractor();
-            audioExtractor.setDataSource(audioFile.getAbsolutePath());
-
-            int audioTrackIndex = getAudioTrackIndex(audioExtractor);
-            MediaFormat audioFormat = audioExtractor.getTrackFormat(audioTrackIndex);
-
-            MediaMuxer muxer = new MediaMuxer(audioFile.getAbsolutePath() + "_temp.aac", MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-
-            int audioTrackIndexMuxer = muxer.addTrack(audioFormat);
-            muxer.start();
-
-            MediaCodec audioDecoder = MediaCodec.createDecoderByType(audioFormat.getString(MediaFormat.KEY_MIME));
-            audioDecoder.configure(audioFormat, null, null, 0);
-            audioDecoder.start();
-
-            ByteBuffer[] inputBuffers = audioDecoder.getInputBuffers();
-            ByteBuffer[] outputBuffers = audioDecoder.getOutputBuffers();
-            MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
-
-            boolean isAudioEOS = false;
-            long audioStartTime = -1;
-            long audioDuration = 0;
-
-            while (!isAudioEOS) {
-                int inputBufferIndex = audioDecoder.dequeueInputBuffer(10000);
-                if (inputBufferIndex >= 0) {
-                    ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
-                    int sampleSize = audioExtractor.readSampleData(inputBuffer, 0);
-                    if (sampleSize < 0) {
-                        audioDecoder.queueInputBuffer(inputBufferIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                        isAudioEOS = true;
-                    } else {
-                        long presentationTimeUs = audioExtractor.getSampleTime();
-                        if (audioStartTime == -1) {
-                            audioStartTime = presentationTimeUs;
-                        }
-                        audioDuration = presentationTimeUs - audioStartTime;
-                        audioDecoder.queueInputBuffer(inputBufferIndex, 0, sampleSize, presentationTimeUs, 0);
-                        audioExtractor.advance();
-                    }
-                }
-
-                int outputBufferIndex = audioDecoder.dequeueOutputBuffer(bufferInfo, 10000);
-                if (outputBufferIndex >= 0) {
-                    ByteBuffer outputBuffer = outputBuffers[outputBufferIndex];
-                    outputBuffer.position(bufferInfo.offset);
-                    outputBuffer.limit(bufferInfo.offset + bufferInfo.size);
-                    bufferInfo.presentationTimeUs = bufferInfo.presentationTimeUs - audioStartTime + videoDuration;
-                    muxer.writeSampleData(audioTrackIndexMuxer, outputBuffer, bufferInfo);
-                    audioDecoder.releaseOutputBuffer(outputBufferIndex, false);
-                }
-            }
-
-            audioDecoder.stop();
-            audioDecoder.release();
-            audioExtractor.release();
-            muxer.stop();
-            muxer.release();
-
-            audioFile.delete();
-            new File(audioFile.getAbsolutePath() + "_temp.aac").renameTo(audioFile);
-
-            Log.d(TAG, "Silence added to audio file: " + audioFile.getAbsolutePath());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     private int getVideoTrackIndex(MediaExtractor extractor) {
         for (int i = 0; i < extractor.getTrackCount(); i++) {
@@ -345,7 +288,6 @@ public class ViewingPresenter implements Repository.MultipleImagesListener {
         }
         return -1;
     }
-
     private static int getAudioTrackIndex(MediaExtractor extractor) {
         for (int i = 0; i < extractor.getTrackCount(); i++) {
             MediaFormat format = extractor.getTrackFormat(i);
@@ -356,8 +298,6 @@ public class ViewingPresenter implements Repository.MultipleImagesListener {
         }
         return -1;
     }
-
-
 
 
     @Override
@@ -443,7 +383,7 @@ public class ViewingPresenter implements Repository.MultipleImagesListener {
         file1.delete();
     }
 
-    class CreateVideoAsync extends AsyncTask {//מלחקת יצירת הסרטון
+    class CreateVideoAsync extends AsyncTask {
         private Handler handler;
         public void setHandler(Handler handler){
             this.handler = handler;
@@ -455,11 +395,11 @@ public class ViewingPresenter implements Repository.MultipleImagesListener {
             Bitmap[] bitmaps1 = new Bitmap[size];
             Log.e(TAG, "doInBackground: SIZE OF FOR LOOP:  " + size);
             for(int i = 0; i < size; i++){
-                //add to array all bitmaps (convert uri to bitmap first)
+
                 Image image = imageArrayList.get(i);
                 Uri uri = image.getImgUri();
                 Bitmap bitmap = null;
-                //convert uri to bitmap
+
                 try {
                     bitmap = MediaStore.Images.Media.getBitmap(view.getContentResolver(), uri);
                 } catch (IOException e) {
@@ -487,8 +427,8 @@ public class ViewingPresenter implements Repository.MultipleImagesListener {
                 encoder = new AndroidSequenceEncoder(out, Rational.R(10, (int)(delay*10)));
                 for (Bitmap bitmap : bitmaps1) {
                     Log.e(TAG, "doInBackground: " + bitmap.toString());
-                    bitmap = Bitmap.createScaledBitmap(bitmap, 580, 1280, true);
-
+//                    bitmap = Bitmap.createScaledBitmap(bitmap, 1000, 1000, true); // 580, 1280
+                    bitmap = scaleCenterCrop(bitmap, 1000, 1000);
                     encoder.encodeImage(bitmap);
                 }
                 encoder.finish();
@@ -502,7 +442,28 @@ public class ViewingPresenter implements Repository.MultipleImagesListener {
             Log.e(TAG, "done");
             return null;
         }
+        public Bitmap scaleCenterCrop(Bitmap source, int newHeight, int newWidth) {
+            int sourceWidth = source.getWidth();
+            int sourceHeight = source.getHeight();
 
+            float xScale = (float) newWidth / sourceWidth;
+            float yScale = (float) newHeight / sourceHeight;
+            float scale = Math.max(xScale, yScale);
+
+            float scaledWidth = scale * sourceWidth;
+            float scaledHeight = scale * sourceHeight;
+
+            float left = (newWidth - scaledWidth) / 2;
+            float top = (newHeight - scaledHeight) / 2;
+
+            RectF targetRect = new RectF(left, top, left + scaledWidth, top + scaledHeight);
+
+            Bitmap dest = Bitmap.createBitmap(newWidth, newHeight, source.getConfig());
+            Canvas canvas = new Canvas(dest);
+            canvas.drawBitmap(source, null, targetRect, null);
+
+            return dest;
+        }
         @Override
         protected void onPostExecute(Object o) {
             super.onPostExecute(o);

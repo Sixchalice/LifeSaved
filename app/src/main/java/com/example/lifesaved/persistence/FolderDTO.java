@@ -26,6 +26,7 @@ public class FolderDTO {
     public void setAmntOfImages(int amntOfImages) { this.amntOfImages = amntOfImages; }
 
 
+
     public Folder toFolder() {
         Folder f1 = new Folder();
         f1.setName(this.name);

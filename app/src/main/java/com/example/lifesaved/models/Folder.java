@@ -14,6 +14,7 @@ public class Folder {
     String fid;
     Uri icon;
     int amntOfImages;
+
     public Folder(String name, Uri icon) {
         this.name = name;
         this.icon = icon;
@@ -52,4 +53,5 @@ public class Folder {
 
     public void setAmntOfImages(int amntOfImages) { this.amntOfImages = amntOfImages; }
     public int getAmntOfImages() { return amntOfImages; }
+
 }

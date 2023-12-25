@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#000000"
     tools:context=".UI.Video.VideoActivity">
 
     <ImageButton
@@ -20,13 +21,14 @@
 
     <VideoView
         android:id="@+id/videoView2"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="411dp"
+        android:layout_height="326dp"
         android:layout_marginTop="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView_videoactivity_title" />
+        app:layout_constraintTop_toBottomOf="@+id/textView_videoactivity_title"
+        app:layout_constraintVertical_bias="0.36" />
 
     <TextView
         android:id="@+id/textView_videoactivity_title"
@@ -34,6 +36,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="TextView"
+        android:textColor="#FFFFFF"
         android:textSize="24sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

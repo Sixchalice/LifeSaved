@@ -91,14 +91,6 @@ public class Repository {
     }
 
 
-    public interface userPushSettingsListener{
-            void onPushSettingsChanged(boolean push);
-    }
-    private userPushSettingsListener userPushSettingsListener;
-    public void setUserPushSettingsListener(userPushSettingsListener listener) {
-        this.userPushSettingsListener = listener;
-    }
-
 
     public void setNumberOfImage(int number, String fid) {
 
@@ -153,7 +145,6 @@ public class Repository {
 
         StorageReference storageRef = FirebaseStorage.getInstance()
                 .getReference().child("folders/" + fid);
-        Log.e("NAME OF FILE:", storageRef.getName());
 
         storageRef.listAll().addOnCompleteListener(new OnCompleteListener<ListResult>() {
             @Override
@@ -275,6 +266,7 @@ public class Repository {
                                     // Local temp file has been created
                                     folder.setIcon(fileUri);
 //                                Log.e(TAG, "onSuccess: " + "got image");
+
                                     folderImageListener.notifydatasetchanged();
                                 }
                             }).addOnFailureListener(new OnFailureListener() {
@@ -474,7 +466,163 @@ public class Repository {
                 });
     } //done
 
+    public void deleteImage(Image img, Folder folder) {
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        StorageReference storageRef = storage.getReference();
+        Log.e(TAG, "deleteImage: " + "folders/" + folder.getFid() + "/" + img.getId());
+        StorageReference imageRef = storageRef.child("folders/" + folder.getFid() + "/" + img.getId() + ".jpg");
+        imageRef.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void unused) {
+                Log.e(TAG, "onSuccess: " + "image deleted");
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e(TAG, "onFailure: " + "image not deleted");
+            }
+        });
+    }
+    //////
 
+
+    public void addUserWithCode(String currentUid, int shareCode){
+
+        DatabaseReference codesRef = database.getReference("Codes");
+        codesRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                for(DataSnapshot snap : snapshot.getChildren()){
+                    Code code = snap.getValue(Code.class);
+                    if(code.getShareCode() == shareCode){
+                        String fid = code.getFid();
+                        addFolderToUser(currentUid, fid);
+                        break;
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
+    }
+    public void addFolderToUser(String uid, String fid){
+
+        DatabaseReference foldersRef = database.getReference("Folders");
+        Query foldersQuery = database.getReference("Folders");
+        foldersQuery.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                for(DataSnapshot snap : snapshot.getChildren()){
+                    FolderDTO folderDTO = snap.getValue(FolderDTO.class);
+                    Folder folder = folderDTO.toFolder();
+                    folder.setFid(snap.getKey());
+                    if(folder.getFid().equals(fid)){
+                        ArrayList<String> userIds = folder.getUserIds();
+                        userIds.add(uid);
+                        folder.setUserIds(userIds);
+                        FolderDTO folderDTO1 = new FolderDTO(folder);
+                        foldersRef.child(folder.getFid()).setValue(folderDTO1);
+                        break;
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
+    }
+
+
+    public void connectFolderWithShareCode(String uid,String folderName, int shareCode){
+
+        final Boolean[] codeExists = {false};
+        final Boolean[] fidExists = {false};
+
+        Query codesQuery = database.getReference("Codes");
+        codesQuery.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                for(DataSnapshot snap : snapshot.getChildren()){
+                    Code code = snap.getValue(Code.class);
+                    if(code.shareCode == shareCode){
+                        codeExists[0] = true;
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
+        if(codeExists[0] == false){
+
+
+            String fid = "";
+            DatabaseReference foldersRef = database.getReference("Folders");
+            Query myQuery = database.getReference("Folders");
+            myQuery.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    //making sure that the folder belongs to the person sharing it also.
+                    for(DataSnapshot snap : snapshot.getChildren()) {
+                        FolderDTO folderDTO = snap.getValue(FolderDTO.class);
+                        Folder folder = folderDTO.toFolder();
+                        folder.setFid(snap.getKey());
+                        if(folder.getName().equals(folderName)){
+                            ArrayList<String> userIds = folder.getUserIds();
+                            if(userIds.contains(uid)){
+                                //check to see if fid already exists:
+                                codesQuery.addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                        for(DataSnapshot snap : snapshot.getChildren()){
+                                            Code code = snap.getValue(Code.class);
+                                            if(code.fid.equals(folder.getFid())){
+                                                fidExists[0] = true;
+                                                DatabaseReference codesRef = database.getReference("Codes/" + snap.getKey()+"/shareCode");
+                                                codesRef.setValue(shareCode);
+
+                                                break;
+                                            }
+                                        }
+                                        if(fidExists[0] == false){
+                                            //create the connection between the code and the folder.
+                                            DatabaseReference myRef = FirebaseDatabase.getInstance().getReference().child("Codes").push();
+                                            Code code = new Code(folder.getFid(), shareCode);
+                                            myRef.setValue(code);
+                                        }
+                                    }
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        }
+        else{
+            Log.e(TAG, "connectFolderWithShareCode: " + "code already exists");
+        }
+    }
+    static class Code{
+        private String fid;
+        private int shareCode;
+        public Code(String fid, int shareCode) {
+            this.fid = fid;
+            this.shareCode = shareCode;
+        }
+        public Code(){}
+        public String getFid() { return fid; }
+        public void setFid(String fid) { this.fid = fid; }
+        public int getShareCode() { return shareCode; }
+        public void setShareCode(int shareCode) { this.shareCode = shareCode; }
+    }
     private static Repository instance = null;
     FirebaseDatabase database = FirebaseDatabase.getInstance("https://lifesaved2-default-rtdb.europe-west1.firebasedatabase.app/");
 

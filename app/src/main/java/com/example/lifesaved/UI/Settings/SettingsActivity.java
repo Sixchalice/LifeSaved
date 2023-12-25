@@ -7,6 +7,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.SpannableString;
@@ -68,6 +70,8 @@ public class SettingsActivity extends AppCompatActivity implements AdapterView.O
 
         dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog_change_password);
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
 
         TextView resetPassword = (TextView) findViewById(R.id.textView_settings_reset_password);
         SpannableString content = new SpannableString("Reset password");
@@ -234,5 +238,12 @@ public class SettingsActivity extends AppCompatActivity implements AdapterView.O
 
     public void closeDialog() {
         dialog.dismiss();
+    }
+
+    public void passwordsError() {
+        TextInputLayout newPassword = dialog.findViewById(R.id.textInputLayout_dialog_settings_first_password);
+        newPassword.setError("Password must be at least 6 characters long");
+        TextInputLayout newPasswordConfirm = dialog.findViewById(R.id.textInputLayout_dialog_settings_second_password);
+        newPasswordConfirm.setError("Password must be at least 6 characters long");
     }
 }

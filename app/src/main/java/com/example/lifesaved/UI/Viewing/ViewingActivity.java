@@ -4,6 +4,7 @@ import static com.example.lifesaved.UI.Folders.HomePageActivity.GALLERY_REQUEST_
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
@@ -41,6 +42,7 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 import android.widget.VideoView;
 
+import com.example.lifesaved.UI.OnLongClickListener;
 import com.example.lifesaved.UI.Video.VideoActivity;
 import com.example.lifesaved.models.Folder;
 import com.example.lifesaved.UI.Folders.HomePageActivity;
@@ -67,7 +69,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-public class ViewingActivity extends AppCompatActivity implements OnItemClickListener, AdapterView.OnItemSelectedListener {
+public class ViewingActivity extends AppCompatActivity implements OnItemClickListener, AdapterView.OnItemSelectedListener, OnLongClickListener {
 
     private static final int REQUEST_WRITE_EXTERNAL_STORAGE = 2;
 
@@ -141,6 +143,7 @@ public class ViewingActivity extends AppCompatActivity implements OnItemClickLis
 
         imageAdapter = new ImageAdapter(imageArrayList);
         imageAdapter.setListener(this);
+        imageAdapter.setLongClickListener(this);
         recyclerView.setAdapter(imageAdapter);
 
         presenter = new ViewingPresenter(this);
@@ -249,10 +252,16 @@ public class ViewingActivity extends AppCompatActivity implements OnItemClickLis
         createVideo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                FragmentManager fm = getSupportFragmentManager();
+                if(selectedSpinnerIndex == 0){
+                    Toast.makeText(ViewingActivity.this, "Please select a time", Toast.LENGTH_SHORT).show();
+                    return;
+                }else{
+                    FragmentManager fm = getSupportFragmentManager();
 
-                spinnerDialog.show(fm, "some_tag");
-                presenter.createVideo(v,imageArrayList);
+                    spinnerDialog.show(fm, "some_tag");
+                    presenter.createVideo(v,imageArrayList);
+                }
+
             }
         });
     }
@@ -307,6 +316,26 @@ public class ViewingActivity extends AppCompatActivity implements OnItemClickLis
         dialog.dismiss();
     }
 
+
+    @Override
+    public void passImageButton(ImageButton buttonView, int index) {
+        buttonView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Image img = imageArrayList.get(index);
+                presenter.deleteImage(img, process);
+                buttonView.setVisibility(View.INVISIBLE);
+            }
+        });
+//        ConstraintLayout constraintLayout = findViewById(R.id.constraintLayout_homepage);
+//        constraintLayout.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Log.e(TAG, "onConstraintLayoutClick: " + "clicked");
+//                buttonView.setVisibility(View.INVISIBLE);
+//            }
+//        });
+    }
 
     @Override
     public void onItemClick(int index) {
@@ -390,5 +419,4 @@ public class ViewingActivity extends AppCompatActivity implements OnItemClickLis
         double delay = Double.parseDouble(SpinnerItems[selectedSpinnerIndex]);
         return delay;
     }
-
 }

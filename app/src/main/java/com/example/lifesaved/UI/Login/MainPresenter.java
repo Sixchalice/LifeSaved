@@ -37,8 +37,14 @@ public class MainPresenter {
     public void loginClick() {
         String email = view.getEmail();
         String password = view.getPassword();
-        boolean validity = checkEmailValidity(email);
-        if (validity) {
+        boolean emailvalidity = checkEmailValidity(email);
+        if(password.length() < 6){
+            if(!emailvalidity)
+                view.emailError();
+            view.passwordError();
+            return;
+        }
+        if (emailvalidity) {
             try {
                 mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(view, new OnCompleteListener<AuthResult>() {
                     @Override
@@ -58,6 +64,9 @@ public class MainPresenter {
             catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+        else{
+            view.emailError();
         }
     }
 

@@ -30,5 +30,15 @@
     <string name="reset_password">Reset password</string>
     <string name="change_password">Change password</string>
     <string name="contact_us">Contact us</string>
+    <string name="or">OR</string>
+    <string name="generate_code">Generate Code</string>
+    <string name="already_have_code">Already have a code?</string>
+    <string name="input_code">Enter code:</string>
+
+
+
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

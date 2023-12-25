@@ -9,6 +9,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager.widget.ViewPager;
+import androidx.viewpager2.widget.ViewPager2;
 
 import android.annotation.SuppressLint;
 import android.app.Dialog;
@@ -16,6 +18,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -28,6 +32,7 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -43,6 +48,7 @@ import com.example.lifesaved.models.Folder;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationBarView;
+import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -67,17 +73,70 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
     private Uri imageUri = null;
     private int recentFolderNumber = 0;
 
+    TabLayout tabLayout;
+    ViewPager2 viewPager2;
+    ViewPagerAdapter viewPagerAdapter;
+    FrameLayout frameLayout;
+
+    public static ArrayAdapter<String> adapterNames;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home_page);
 
+
+
         dialogShare = new Dialog(this);
         dialogShare.setContentView(R.layout.dialog_sharing_folder);
+        dialogShare.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+//        actv = (AutoCompleteTextView) dialogShare.findViewById(R.id.autoCompleteTextView);
 
-        actv = (AutoCompleteTextView) dialogShare.findViewById(R.id.autoCompleteTextView);
+
+        tabLayout = dialogShare.findViewById(R.id.tabLayout_sharing);
+        viewPager2 = dialogShare.findViewById(R.id.viewPager2);
+        frameLayout = dialogShare.findViewById(R.id.frameLayout);
+        ViewPagerAdapter viewPagerAdapter = new ViewPagerAdapter(this);
+        viewPager2.setAdapter(viewPagerAdapter);
+
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                Log.e(TAG, "onTabSelected: " + tab.getPosition());
+                viewPager2.setVisibility(View.VISIBLE);
+                frameLayout.setVisibility(View.GONE);
+                viewPager2.setCurrentItem(tab.getPosition());
+            }
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+
+            }
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                viewPager2.setVisibility(View.VISIBLE);
+                frameLayout.setVisibility(View.GONE );
+            }
+        });
+
+        viewPager2.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                switch (position){
+                    case 0:
+                        tabLayout.selectTab(tabLayout.getTabAt(0));
+                        break;
+                    case 1:
+                        tabLayout.selectTab(tabLayout.getTabAt(1));
+                        break;
+                }
+                super.onPageSelected(position);
+            }
+        });
+
+
         dialogAddFolder = new Dialog(this);
         dialogAddFolder.setContentView(R.layout.dialog_add_folder);
+        dialogAddFolder.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
         RecyclerView recyclerView = findViewById(R.id.recyclerview_folders);
 
@@ -122,17 +181,18 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
             public void onClick(View view) {
                 dialogShare.show();
 
-                Button submit = dialogShare.findViewById(R.id.button_dialolg_sharing_submit);
-                submit.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        EditText email = dialogShare.findViewById(R.id.editText_dialog_sharing_email);
-                        dialogShare.dismiss();
-                        presenter.AddUserIdToFolder(email.getText().toString());
-                        email.setText("");
-                        actv.setText("");
-                    }
-                });
+
+//                Button submit = dialogShare.findViewById(R.id.button_dialolg_sharing_submit);
+//                submit.setOnClickListener(new View.OnClickListener() {
+//                    @Override
+//                    public void onClick(View view) {
+//                        EditText email = dialogShare.findViewById(R.id.editText_dialog_sharing_email);
+//                        dialogShare.dismiss();
+//                        presenter.AddUserIdToFolder(email.getText().toString());
+//                        email.setText("");
+//                        actv.setText("");
+//                    }
+//                });
             }
 
         });
@@ -194,6 +254,23 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
                 return true;
             }
         });
+
+//        Button share = dialogShare.findViewById(R.id.);
+//        share.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                presenter.shareMessage();
+//            }
+//        });
+
+
+
+
+
+
+
+
+
     }
 
     @Override
@@ -258,11 +335,18 @@ public class HomePageActivity extends AppCompatActivity implements OnItemClickLi
         for (int i = 0; i < fNames.length; i++) {
             fNames[i] = Folders.get(i).getName();
         }
-//        actv = (AutoCompleteTextView) dialogShare.findViewById(R.id.autoCompleteTextView);
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>
+        adapterNames = new ArrayAdapter<String>
                 (this, android.R.layout.select_dialog_item, fNames);
-        actv.setThreshold(0);
-        actv.setAdapter(adapter);//setting the adapter data into the AutoCompleteTextView
+//        actv.setThreshold(0);
+//        actv.setAdapter(adapterNames);//setting the adapter data into the AutoCompleteTextView
+
+        Gson gson = new Gson();
+        String json = gson.toJson(fNames);
+        SharedPreferences sharedprefs = getSharedPreferences("infoFile", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedprefs.edit();
+        editor.putString("folderNames", json);
+        editor.commit();
+
 
 
         folderAdapter.notifyDataSetChanged();

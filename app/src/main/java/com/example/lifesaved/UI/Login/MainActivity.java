@@ -81,6 +81,7 @@ public class  MainActivity extends AppCompatActivity{
 
     public String getEmail() {
         TextInputLayout user = findViewById(R.id.textInputLayout_login_email);
+        user.setError(null);
         return user.getEditText().getText().toString();
     }
 
@@ -91,6 +92,7 @@ public class  MainActivity extends AppCompatActivity{
 
     public String getPassword() {
         TextInputLayout password = findViewById(R.id.textInputLayout_login_password);
+        password.setError(null);
         return password.getEditText().getText().toString();
     }
 
@@ -98,6 +100,8 @@ public class  MainActivity extends AppCompatActivity{
     public void navigateToNextPage() {
         Intent intent = new Intent(MainActivity.this, HomePageActivity.class);
         startActivity(intent);
+
+
     }
 
     public void notifyOfError(String msg) {
@@ -113,8 +117,12 @@ public class  MainActivity extends AppCompatActivity{
         }
     }
 
+    public void passwordError() {
+        TextInputLayout password = findViewById(R.id.textInputLayout_login_password);
+        password.setError("Password must be at least 6 characters");
+    }
     public void emailError() {
-
-        Toast.makeText(this, "Check email validity", Toast.LENGTH_SHORT).show();
+        TextInputLayout user = findViewById(R.id.textInputLayout_login_email);
+        user.setError("Invalid email");
     }
 }

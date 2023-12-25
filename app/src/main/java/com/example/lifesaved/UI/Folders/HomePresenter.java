@@ -9,17 +9,22 @@ import com.example.lifesaved.persistence.Repository;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
+import java.util.Random;
 
-public class HomePresenter implements Repository.FolderListener, Repository.FolderImageListener, Repository.UserIdListener, Repository.DeletedFolderListener {
+public class HomePresenter implements Repository.FolderListener, Repository.FolderImageListener, Repository.DeletedFolderListener {
+
     private HomePageActivity view;
-
 
     public ArrayList<Folder> folderArrayList = new ArrayList<>();
 
     private String folderName = "x83ds6fk9";
+
+
     public HomePresenter(HomePageActivity view) {
 
         this.view = view;
+
+
 
         Repository.getInstance().setFolderListener(this);
         Repository.getInstance().setFolderImageListener(this);
@@ -55,14 +60,6 @@ public class HomePresenter implements Repository.FolderListener, Repository.Fold
     }
 
 
-
-    public void AddUserIdToFolder(String email) {
-        folderName = view.getFolderName();
-        Repository.getInstance().setUserIdListener(this);
-        Log.e("Folder", "Folder added" + folderName + " Email: " + email);
-        Repository.getInstance().readUserId(email);
-    }
-
     @Override
     public void updateImageProgress(String txt) {
         //used to receive things from repository
@@ -75,12 +72,6 @@ public class HomePresenter implements Repository.FolderListener, Repository.Fold
     }
 
 
-
-    @Override
-    public void onUidChanged(String newuid) {
-        Repository.getInstance().addUserIdToFolder(newuid, folderName, FirebaseAuth.getInstance().getUid());
-    }
-
     public void deleteFolder(Folder f1) {
         String uid = FirebaseAuth.getInstance().getUid();
         Repository.getInstance().deleteFolder(f1, uid);
@@ -89,5 +80,20 @@ public class HomePresenter implements Repository.FolderListener, Repository.Fold
     @Override
     public void onFolderDeleted() {
         view.notifydatasetwaschanged();
+    }
+
+    public void shareMessage() {
+        int min = 111111;
+        int max = 999999;
+        Random generator = new Random();
+        int shareCode = generator.nextInt(900000) + 100000;
+        Log.e("Folder", " Share code: " + shareCode);
+
+        String uid = FirebaseAuth.getInstance().getUid();
+        Repository.getInstance().connectFolderWithShareCode(uid,folderName, shareCode);
+
+        //:TODO send with whatsapp
+
+
     }
 }

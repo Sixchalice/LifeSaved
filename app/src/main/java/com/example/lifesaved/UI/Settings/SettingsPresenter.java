@@ -4,6 +4,7 @@ import static android.content.Context.MODE_PRIVATE;
 
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -44,7 +45,6 @@ public class SettingsPresenter {
                 else {
                     PeriodicWorkRequest periodicWorkRequest = new
                             PeriodicWorkRequest.Builder(MyWorker.class, worker_repeat_interval, TimeUnit.MINUTES)
-//                                    .setInitialDelay(2000, TimeUnit.MILLISECONDS)
                             .addTag("WORKER_PUSH_NOTIFICATION")
                             .build();
                     WorkManager.getInstance(view).enqueue(periodicWorkRequest);
@@ -52,7 +52,6 @@ public class SettingsPresenter {
             } else {
                 PeriodicWorkRequest periodicWorkRequest = new
                         PeriodicWorkRequest.Builder(MyWorker.class, worker_repeat_interval, TimeUnit.MINUTES)
-//                                .setInitialDelay(2000, TimeUnit.MILLISECONDS)
                         .addTag("WORKER_PUSH_NOTIFICATION")
                         .build();
                 WorkManager.getInstance(view).enqueue(periodicWorkRequest);
@@ -84,6 +83,7 @@ public class SettingsPresenter {
         }
         if(newPassword.length() < 6){
             view.showMessage("Password must be at least 6 characters long");
+            view.passwordsError();
             return;
         }
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
